@@ -1,5 +1,4 @@
--- Optional: use enums for clarity
-create type alert_rule_type as enum ('price_high','price_low','import_power_high','export_power_high','voltage_sag','voltage_swell', 'power_failure');
+create type alert_rule_type as enum ('price','import_power','voltage_sag','voltage_swell', 'power_failure');
 create type comparison_op as enum ('>','>=','<','<=','==');
 create type notification_status as enum ('queued','sent','failed','read');
 create type alert_severity as enum ('info','warning','danger');
@@ -163,10 +162,10 @@ create unique index electricity_price_uq on electricity_price (area_id, valid_fr
 -- Scope: a rule can be tied to a site, a meter, or a price provider/area (for price rules).
 -- The server will evaluate Rules on a regular schedule.
 -- validations for inserting here:
---  - area_id must be present if rule_type is price_high or price_low
---  - meter_id must be present if rule_type is import_power_high, export_power_high, voltage_sag or voltage_swell
+--  - area_id must be present if rule_type is price
+--  - meter_id must be present if rule_type is import_power, export_power, voltage_sag or voltage_swell
 --  - comparison must be present if threshold_value is present
---  - threshold_value must be present if comparison is present
+--  - a lot more checks
 create table alert_rule
 (
     id              smallserial     primary key,
@@ -234,7 +233,6 @@ create table alert_event
     rule_id        bigint       not null references alert_rule (id) on delete cascade,
     occurred_at    timestamptz  not null,
     observed_value numeric(14, 6),
-    payload        jsonb, -- details: which metric, meter_id, phase, reading_ts, price_id, etc.
     created_at     timestamptz  not null default now()
 );
 
@@ -243,7 +241,6 @@ create table notification
 (
     id       bigserial primary key,
     event_id bigint              not null references alert_event (id) on delete cascade,
-    channel  text                not null, -- 'push','email','webhook', etc.
     status   notification_status not null default 'queued',
     sent_at  timestamptz,
     details  text                          -- error or provider response

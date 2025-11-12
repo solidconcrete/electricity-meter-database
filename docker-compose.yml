@@ -1,0 +1,13 @@
+name: data-models-hw
+services:
+  postgres:
+    image: postgres:17
+    container_name: homework-container
+    restart: unless-stopped
+    shm_size: 512mb
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_PASSWORD: pass
+      POSTGRES_USER: user
+      POSTGRES_DB: hw_db
